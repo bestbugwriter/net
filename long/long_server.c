@@ -24,6 +24,7 @@ int main(int argc, char *argv)
 	fd_set rds;
 	int ret = -1;
 	int len = 0;
+	int connfd = -1;
 	
 	memset(&servaddr, 0, sizeof(servaddr));
 	memset(&clinaddr, 0, sizeof(clinaddr));
@@ -48,7 +49,7 @@ int main(int argc, char *argv)
 	
 	listen(sockfd, 5);
 	
-	if (accept(sockfd, (struct sockaddr *)(&clinaddr), &len) < 0)
+	if ((connfd = accept(sockfd, (struct sockaddr *)(&clinaddr), &len)) < 0)
 	{
 		printf("bind error. errno = %d\n", errno);
 		exit(0);
@@ -68,7 +69,7 @@ int main(int argc, char *argv)
 			printf("long tcp connect timeout, will be close.\n");
 			break;
 		}
-		//memset(&cmd, 0, sizeof(cmd));
+		memset(&cmd, 0, sizeof(cmd));
 		FD_ZERO(&rds);
 		FD_SET(sockfd, &rds);
 
@@ -87,14 +88,12 @@ int main(int argc, char *argv)
 		{
 			if(FD_ISSET(sockfd, &rds))
 			{
-				read(sockfd, &cmd, sizeof(cmd));
+				recv(connfd, cmd, sizeof(cmd), 0);
+				printf("recv cmd, %s\n", cmd);
 			}
-			printf("recv cmd, %s\n", cmd);
 		}
-		
-		//read(sockfd, &cmd, 7);
-		//printf("recv cmd, %s\n", cmd);
-		if (strncmp(cmd, "alive", sizeof("alive")) == 0)
+
+		if (strncmp(cmd, "alive", strlen("alive")) == 0)
 		{
 			timeout_num = 0;
 			printf("recv the heartbeat packet success\n");

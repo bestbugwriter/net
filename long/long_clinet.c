@@ -32,7 +32,7 @@ int main(int argc, char *argv)
 	}
 	
 	servaddr.sin_family = AF_INET;
-	servaddr.sin_addr.s_addr = inet_addr("123.57.79.83");
+	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	servaddr.sin_port = htons(PORT);
 	
 	if(-1 == connect(sockfd, (struct sockaddr *)(&servaddr), sizeof(struct sockaddr)))
@@ -41,12 +41,12 @@ int main(int argc, char *argv)
 		exit(0);
 	}
 	
-	strncpy(cmd, "alive\n", strlen("alive\n"));
+	strncpy(cmd, "alive", strlen("alive"));
 	printf("cmd = %s\n", cmd);
 	
 	while(1)
 	{
-		if (send(sockfd, &cmd, strlen(cmd), 0) < 0)
+		if (send(sockfd, cmd, strlen(cmd), 0) < 0)
 		{
 			printf("write error. errno = %d\n", errno);
 			continue;
