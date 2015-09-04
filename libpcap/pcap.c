@@ -3,25 +3,60 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
+#include <unistd.h>
+
 #include "callback.h"
 #include "filter.h"
 
-int main(int argc, char **argv)
+int getInputParm(int argc, char **argv, char *filter_cond, int *num)
 {
-	if (argc != 2)
+	if ((argc < 2) || (NULL == argv) || (NULL == filter_cond) || (NULL == num))
 	{
-		printf("input num error\n");
+		printf("getInputParm: input error\n");
 		return -1;
 	}
 	
+	int ch = 0;
+
+	while((ch=getopt(argc, argv, "n:f:"))!=-1)
+	{
+		switch(ch)
+		{
+			case 'n':
+				*num = atoi(optarg);
+				break;
+
+			case 'f':
+				memcpy(filter_cond, optarg, strlen(optarg));
+				break;
+
+			case 'h':
+				printf("-n capture packet number.\n-f filter condition\n");
+				break;
+
+			default:
+				printf("-n capture packet number.\n-f filter condition\n");
+				break;
+		}
+	}
+	return 0;
+}
+
+int main(int argc, char **argv)
+{
 	char errBuf[PCAP_ERRBUF_SIZE];
 	char *devStr = NULL;
 	pcap_t *device = NULL;
 	int id = 0;
 	int cap_num = 0;
+	char filter_cond[1024];
 
+	memset(filter_cond, 0, sizeof(filter_cond));
 	memset(errBuf, 0, sizeof(errBuf));
 
+	getInputParm(argc, argv, filter_cond, &cap_num);
+	
 	/* get a device */
 	devStr = pcap_lookupdev(errBuf);
 	if(NULL == devStr)
@@ -45,9 +80,8 @@ int main(int argc, char **argv)
 		return -1;
 	}
 
-	pcap_filter(device, "icmp");
+	pcap_filter(device, filter_cond);
 	
-	cap_num = atoi(argv[1]);
 	pcap_loop(device, cap_num, printHex, (u_char*)&id);
 
 	pcap_close(device);

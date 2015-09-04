@@ -3,7 +3,7 @@
 #include <pcap.h>
 #include <errno.h>
 
-int pcap_filter(pcap_t *device, const char *buf)
+int pcap_filter(pcap_t *device, char *buf)
 {
 	if ((NULL == device) || (NULL == buf))
 	{
@@ -22,7 +22,7 @@ int pcap_filter(pcap_t *device, const char *buf)
 	if (pcap_setfilter(device, &filter) == -1)
 	{
 		printf("pcap_setfilter error, errno = %d.\n", errno);
-		return -1;	
+		return -1;
 	}
 
 	return 0;
